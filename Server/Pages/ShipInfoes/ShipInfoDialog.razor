@@ -1,0 +1,151 @@
+﻿@page "/shipinfodialog/{id}"
+@using Share.Models
+@using System.IO;
+@using Blazored.Toast
+@using Blazored.Toast.Services
+@using Microsoft.AspNetCore.Hosting
+@layout MainLayout
+@inject Share.Interfaces.IShipInfoSvc _shipInfoSvc
+@inject NavigationManager navigation
+@inject IWebHostEnvironment env
+@inject IToastService toastService
+
+<div class="row">
+    <div class="col-md-4 m-auto">
+        <h2 class="card-title text-center font-weight-bold text-uppercase">Thông tin giao hàng</h2>
+        <EditForm Model="@shipinfo" OnValidSubmit="@SubmitForm">
+            <DataAnnotationsValidator />
+            <input type="hidden" @bind="shipinfo.ShipId" />
+            <div class="form-group mt-3 row">
+                <label class="control-label col-5">Mã đơn hàng</label>
+                <span class="font-weight-bold col-7">@shipinfo.OrderId</span>
+            </div>
+
+            <div class="form-group mt-3 row">
+                <label class="control-label col-5">Tên khách hàng</label>
+                <span class="font-weight-bold col-7">@shipinfo.CusName</span>
+            </div>
+
+            <div class="form-group mt-3 row">
+                <label class="control-label col-5">Địa chỉ giao hàng</label>
+                <input @bind="shipinfo.Address" class="form-control col-7" />
+                <ValidationMessage For="@(() => shipinfo.Address)" />
+            </div>
+
+            <div class="form-group mt-3 row">
+                <label class="control-label col-5">Số điện thoại</label>
+                <input @bind="shipinfo.PhoneNumber" class="form-control col-7" />
+                <ValidationMessage For="@(() => shipinfo.PhoneNumber)" />
+            </div>
+
+            <div class="form-label-group mt-3 row">
+                <label class="control-label col-5">Hình thức vận chuyển</label>
+                @if (shipinfo.ShippingMethod)
+                {
+                    <span class="font-weight-bold col-7">Giao hàng tận nhà</span>
+                }
+                else
+                {
+                    <span class="font-weight-bold col-7">Lấy hàng trực tiếp</span>
+                }
+
+            </div>
+
+            <div class="form-group mt-3 row">
+                <label class="control-label col-5">Giá vận chuyển</label>
+                <span class="font-weight-bold col-7">@shipinfo.Price VNĐ</span>
+            </div>
+
+            <div class="form-label-group mt-3 row">
+                <label class="control-label col-5">Đối tác vận chuyển</label>
+                <InputSelect @bind-Value="@shipinfo.Partner" class="form-control col-7">
+                    @foreach (Partner partner in Enum.GetValues(typeof(Partner)))
+                    {
+                        if (partner == Partner.None)
+                        {
+                            <option value="@partner">Không có đơn vị</option>
+                        }
+                        else
+                        {
+                            <option value="@partner">@partner</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="form-group mt-3 row">
+                <label class="control-label col-5">Ghi chú</label>
+                <textarea class="form-control col-7" @bind="shipinfo.Notes" rows="4" maxlength="200"></textarea>
+                <ValidationMessage For="@(() => shipinfo.Notes)" />
+            </div>
+
+            <div class="form-group m-3">
+                <button type="submit" class="btn btn-info">Lưu</button>
+                <input type="button" class="btn btn-primary" @onclick="@Cancel" value="Thoát" />
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+    private ToastParameters _toastParameters;
+    private ShipInfo shipinfo { get; set; }
+    IReadOnlyList<IBrowserFile> selectedFiles;
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrWhiteSpace(id) || id == "0")
+        {
+            shipinfo = new ShipInfo();
+        }
+        else
+        {
+            shipinfo = _shipInfoSvc.GetShipInfo(int.Parse(id));
+        }
+    }
+
+    private void SubmitForm()
+    {
+        _toastParameters = new ToastParameters();
+        if (shipinfo.ShipId == 0)
+        {
+            int ret = _shipInfoSvc.AddShipInfo(shipinfo);
+            if (ret != 0)
+            {
+                _toastParameters.Add(nameof(Notification.Title), "Thêm thông tin giao hàng thành công!");
+                _toastParameters.Add(nameof(Notification.IsSuccess), true);
+                toastService.ShowToast<Notification>(_toastParameters);
+            }
+            else
+            {
+                _toastParameters.Add(nameof(Notification.Title), "Thêm thông tin giao hàng thất bại!");
+                _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                toastService.ShowToast<Notification>(_toastParameters);
+            }
+        }
+        else
+        {
+            int ret = _shipInfoSvc.EditShipInfo(shipinfo.ShipId, shipinfo);
+            if (ret != 0)
+            {
+                _toastParameters.Add(nameof(Notification.Title), "Chỉnh sửa thông tin giao hàng thành công!");
+                _toastParameters.Add(nameof(Notification.IsSuccess), true);
+                toastService.ShowToast<Notification>(_toastParameters);
+            }
+            else
+            {
+                _toastParameters.Add(nameof(Notification.Title), "Chỉnh sửa thông tin giao hàng thất bại!");
+                _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                toastService.ShowToast<Notification>(_toastParameters);
+            }
+        }
+        navigation.NavigateTo("shipinfolist");
+    }
+    private void Cancel()
+    {
+        navigation.NavigateTo("shipinfolist", true);
+    }
+
+}

@@ -1,0 +1,165 @@
+﻿@page "/userlist"
+@using Share.Models
+@using Share.Helpers
+@using System.Security.Claims
+@layout MainLayout
+@inject Share.Interfaces.IUserSvc _userService
+<h1 class="font-weight-bold text-center">Danh sách người dùng</h1>
+@if (users == null)
+{
+    <p><em>Đang tải ...</em></p>
+}
+else
+{
+    <div class="text-right">
+        <AuthorizeView>
+            <Authorized>
+                @if (context.User.IsInRole("Manager"))
+                {
+                    <a style="text-decoration:none;" href="userdialog/0">
+                        <button type="button" class="btn btn-success btn-circle btn-md"><i class="fa fa-plus" style="color:white;font-size:20px;"></i></button>
+                    </a>
+                }
+            </Authorized>
+        </AuthorizeView>
+        <br />
+        <br />
+        <div class="d-flex justify-content-end">
+            <input type="text" class="form-control col-3 mr-2" @bind-value=@SearchString @oninput="SearchInfo" placeholder="Nhập thông tin tìm kiếm..." />
+        <button class="btn btn-outline-primary col-1 form-control" @onclick="OnInitialized">Tìm kiếm</button>
+        </div>
+        <br />
+        <br />
+    </div>
+    <table class="table table-hover text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th style="cursor: pointer" @onclick="@(()=>UserSorting("UserName"))">Tài khoản</th>
+                <th style="cursor: pointer" @onclick="@(()=>UserSorting("FullName"))">Họ tên</th>
+                <th style="cursor: pointer" @onclick="@(()=>UserSorting("Email"))">Email</th>
+                <th style="cursor: pointer" @onclick="@(()=>UserSorting("DoB"))">Ngày sinh</th>
+                <th style="cursor: pointer" @onclick="@(()=>UserSorting("Roles"))">Vai trò</th>
+                <th style="cursor: pointer" @onclick="@(()=>UserSorting("Status"))">Trạng thái</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in users)
+            {
+                <tr>
+                    <td>@item.UserName</td>
+                    <td>@item.FullName </td>
+                    <td>@item.Email</td>
+                    <td>@item.DoB.Date.ToString("dd/MM/yyyy")</td>
+                    <td>@item.Roles.DisplayName()</td>
+                    <td>
+                        @if (item.Status)
+                        {
+                            <span>Hoạt động</span>
+                        }
+                        else
+                        {
+                            <span>Không hoạt động</span>
+                        }
+                    </td>
+                    <AuthorizeView>
+                        <Authorized>
+                            @if (context.User.IsInRole("Manager"))
+                            {
+                                <td>
+                                    <a class="btn btn-info" href="/userdialog/@item.UserId">Sửa</a>
+                                </td>
+                            }
+                        </Authorized>
+                    </AuthorizeView>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    private string searchValue;
+    public string SearchString { get; set; }
+    int ids = 0;
+    public List<User> users;
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+
+    protected async void SearchInfo(ChangeEventArgs args)
+    {
+        var user = (await AuthStat).User;
+        var userCurrent = _userService.GetAllUser().Where(x => x.UserId.ToString() == user.FindFirst(ClaimTypes.NameIdentifier).Value);
+        SearchString = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchString))
+        {
+            users = _userService.GetAllUser().Except(userCurrent).Where(x => x.UserName.ToUpper().Contains(SearchString.ToUpper())
+            || x.FullName.ToUpper().Contains(SearchString.ToUpper()) || x.Email.ToUpper().Contains(SearchString.ToUpper())
+            || x.DoB.ToString().Contains(SearchString)).ToList();
+        }
+        else
+        {
+            users = _userService.GetAllUser().Except(userCurrent).ToList();
+        }
+    }
+
+    protected void UserSorting(string SortColumn)
+    {
+        if (ids == 0)
+        {
+            ids = 1;
+            switch (SortColumn)
+            {
+                case "UserName":
+                    users = users.OrderBy(x => x.UserName).ToList();
+                    break;
+                case "FullName":
+                    users = users.OrderBy(x => x.FullName).ToList();
+                    break;
+                case "Email":
+                    users = users.OrderBy(x => x.Email).ToList();
+                    break;
+                case "DoB":
+                    users = users.OrderBy(x => x.DoB).ToList();
+                    break;
+                case "Roles":
+                    users = users.OrderBy(x => x.Roles).ToList();
+                    break;
+                case "Status":
+                    users = users.OrderBy(x => x.Status).ToList();
+                    break;
+            }
+        }
+        else
+        {
+            ids = 0;
+
+            switch (SortColumn)
+            {
+                case "UserName":
+                    users = users.OrderByDescending(x => x.UserName).ToList();
+                    break;
+                case "FullName":
+                    users = users.OrderByDescending(x => x.FullName).ToList();
+                    break;
+                case "Email":
+                    users = users.OrderByDescending(x => x.Email).ToList();
+                    break;
+                case "DoB":
+                    users = users.OrderByDescending(x => x.DoB).ToList();
+                    break;
+                case "Roles":
+                    users = users.OrderByDescending(x => x.Roles).ToList();
+                    break;
+                case "Status":
+                    users = users.OrderByDescending(x => x.Status).ToList();
+                    break;
+            }
+        }
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        var user = (await AuthStat).User;
+        var userCurrent = _userService.GetAllUser().Where(x => x.UserId.ToString() == user.FindFirst(ClaimTypes.NameIdentifier).Value);
+        users = _userService.GetAllUser().Except(userCurrent).ToList();
+    }
+}

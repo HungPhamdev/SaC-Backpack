@@ -1,0 +1,200 @@
+﻿@page "/productlist"
+@using Share.Models
+@using Share.Helpers
+@layout MainLayout
+@inject Share.Interfaces.IProductSvc _productSvc;
+@inject IModalService modal
+
+@if (products == null)
+{
+    <p><em>Loading ...</em></p>
+}
+else
+{
+    <div class="text-right">
+        <a style="text-decoration:none;" @onclick="@(() => ShowModalProduct(0))" class="btn btn-success btn-circle btn-md">
+            <i class="fa fa-plus mt-2" style="color:white;font-size:20px;"></i>
+        </a>
+    </div>
+    <div class="row">
+        <h1 class="col-4 font-weight-bold text-left">
+            Danh sách sản phẩm
+        </h1>
+        <div class="col-8 text-right mt-3 row">
+            <br />
+            <select name="cars" class="custom-select col-2 mr-2" value="@SearchCategory" @onchange="SearchProductCategory">
+                <option value="">Tất cả</option>
+                <option value="@Category.Backpack">Ba lô</option>
+                <option value="@Category.Accessories">Phụ kiện</option>
+            </select>
+            <select name="cars" class="custom-select col-3 mr-2" value="@SearchStatus" @onchange="SearchProductStatus">
+                <option value="">Chọn trạng thái</option>
+                <option value="True">Còn hàng</option>
+                <option value="False">Hết hàng</option>
+            </select>
+            <input type="text" class="form-control col-4 mr-2" @bind-value=@SearchString @oninput="SearchInfo" placeholder="Nhập thông tin tìm kiếm..." />
+            <button class="btn btn-outline-primary form-control col-2" @onclick="OnInitialized">Tìm kiếm</button>
+        </div>
+    </div>
+    <br />
+    <br />
+    <table class="table table-hover text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col" style="cursor: pointer" @onclick="@(()=>ProductSorting("ProductName"))">Tên</th>
+                <th scope="col" style="cursor: pointer" @onclick="@(()=>ProductSorting("Price"))">Giá</th>
+                <th scope="col" style="cursor: pointer" @onclick="@(()=>ProductSorting("Category"))">Phân loại</th>
+                <th scope="col" style="width:20%">Hình</th>
+                <th scope="col">Trạng thái</th>
+                @*<th scope="col" style="width:30%">Thông tin</th>*@
+                <th scope="col">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            @foreach (var item in products)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.Price</td>
+                    <td>@item.Category.DisplayName()</td>
+                    <td><img src="images/Product/@item.Image" style="width:150px; height:150px" /></td>
+                    <td>
+                        @if (item.Status)
+                        {
+                            <span>Còn hàng</span>
+                        }
+                        else
+                        {
+                            <span>Hết hàng</span>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-info" @onclick="@(() => ShowModalProduct(item.ProductId))">Xem thông tin</button>
+                    </td>
+                </tr>
+
+            }
+        </tbody>
+    </table>
+
+}
+
+@code {
+    //[Parameter]
+    public string SearchString { get; set; }
+    public string SearchCategory { get; set; }
+    public string SearchStatus { get; set; }
+    int ids = 0;
+
+    public List<Product> products { get; set; }
+
+    //protected override void OnParametersSet()
+    //{
+    //    if (!string.IsNullOrEmpty(SearchString))
+    //    {
+    //        products = _productSvc.GetAllProduct().Where(x => x.ProductName.ToUpper().Contains(SearchString.ToUpper())).ToList();
+    //    }
+    //    else
+    //    {
+    //        products = _productSvc.GetAllProduct();
+    //    }
+    //}
+
+    protected void SearchInfo(ChangeEventArgs args)
+    {
+        SearchString = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchString))
+        {
+            products = _productSvc.GetAllProduct().Where(x => x.ProductName.ToUpper().Contains(SearchString.ToUpper())
+            || x.Price.ToString().Contains(SearchString)).ToList();
+        }
+        else
+        {
+            products = _productSvc.GetAllProduct();
+        }
+    }
+
+    protected void SearchProductStatus(ChangeEventArgs args)
+    {
+        SearchStatus = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchStatus))
+        {
+            products = _productSvc.GetAllProduct().Where(x => x.Status.ToString() == SearchStatus).ToList();
+        }
+        else
+        {
+            products = _productSvc.GetAllProduct();
+        }
+    }
+
+    protected void SearchProductCategory(ChangeEventArgs args)
+    {
+        SearchCategory = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchCategory))
+        {
+            products = _productSvc.GetAllProduct().Where(x => x.Category.ToString() == SearchCategory).ToList();
+        }
+        else
+        {
+            products = _productSvc.GetAllProduct();
+        }
+    }
+
+    protected void ProductSorting(string SortColumn)
+    {
+        products = _productSvc.GetAllProduct();
+        if (ids == 0)
+        {
+            ids = 1;
+
+            switch (SortColumn)
+            {
+                case "ProductName":
+                    products = products.OrderBy(x => x.ProductName).ToList();
+                    break;
+                case "Price":
+                    products = products.OrderBy(x => x.Price).ToList();
+                    break;
+                case "Category":
+                    products = products.OrderBy(x => x.Category).ToList();
+                    break;
+            }
+        }
+        else
+        {
+            ids = 0;
+
+            switch (SortColumn)
+            {
+                case "ProductName":
+                    products = products.OrderByDescending(x => x.ProductName).ToList();
+                    break;
+                case "Price":
+                    products = products.OrderByDescending(x => x.Price).ToList();
+                    break;
+                case "Category":
+                    products = products.OrderByDescending(x => x.Category).ToList();
+                    break;
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        products = _productSvc.GetAllProduct();
+    }
+
+    void ShowModalProduct(int prodId)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(ProductDialog.id), prodId.ToString());
+        string title;
+        if (prodId == 0)
+        {
+            title = "Thêm sản phẩm";
+        }
+        else { title = "Cập nhật sản phẩm"; }
+        modal.Show<ProductDialog>(title, parameters);
+    }
+}

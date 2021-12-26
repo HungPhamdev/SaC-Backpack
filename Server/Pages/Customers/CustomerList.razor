@@ -1,0 +1,167 @@
+﻿@page "/customerlist"
+@layout MainLayout
+@using Share.Models
+@inject Share.Interfaces.ICustomerSvc _customerSvc
+
+<div class="row">
+    <h1 class="col-6 font-weight-bold text-left">
+        Danh sách khách hàng
+    </h1>
+    <div class="col-6 text-right row mt-3">
+        <br />
+        <select name="cars" class="custom-select col-4 mr-2" value="@SearchStatus" @onchange="SearchCustomerStatus">
+            <option value="">Chọn trạng thái</option>
+            <option value="True">Đang hoạt động</option>
+            <option value="False">Dừng hoạt động</option>
+        </select>
+        <input type="text" class="form-control col-5 mr-2" @bind-value=@SearchString @oninput="SearchInfo" placeholder="Nhập thông tin tìm kiếm..." />
+        <button class="btn btn-outline-primary form-control col-2" @onclick="OnInitialized">Tìm kiếm</button>
+    </div>
+</div>
+<br />
+<br />
+
+@if (customers == null)
+{
+    <p><em>Đang tải...</em></p>
+}
+else
+{
+    <table class="table table-hover text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th style="cursor: pointer" @onclick="@(()=>CustomerSorting("FullName"))">Họ và tên</th>
+                <th style="cursor: pointer" @onclick="@(()=>CustomerSorting("CreatedDate"))">Ngày sinh</th>
+                <th style="cursor: pointer" @onclick="@(()=>CustomerSorting("PhoneNumber"))">Số điện thoại</th>
+                <th style="cursor: pointer" @onclick="@(()=>CustomerSorting("Email"))">Email</th>
+                <th style="cursor: pointer" @onclick="@(()=>CustomerSorting("Address"))">Địa chỉ</th>
+                <th style="cursor: pointer" @onclick="@(()=>CustomerSorting("Status"))">Trạng thái</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in customers)
+            {
+                <tr>
+                    <td>@item.FullName</td>
+                    <td>@item.CreatedDate.Date.ToString("dd/MM/yyyy")</td>
+                    <td>@item.PhoneNumber</td>
+                    <td>@item.Email</td>
+                    <td>@item.Address</td>
+                    <td>
+                        @if (item.Status == true)
+                        {
+                            <span>Đang hoạt động</span>
+                        }
+                        else
+                        {
+                            <span>Dừng hoạt động</span>
+                        }
+                    </td>
+                    <td>
+                        <a class="btn btn-info font-weight-bold" href="/customerDialog/@item.CustomerId">Chi tiết</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    //[Parameter]
+    public string SearchString { get; set; }
+    public string SearchStatus { get; set; }
+    int ids = 0;
+    public List<Customer> customers;
+
+    protected void SearchInfo(ChangeEventArgs args)
+    {
+        SearchString = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchString))
+        {
+            customers = _customerSvc.GetAllCustomer().Where(x => x.FullName.ToUpper().Contains(SearchString.ToUpper())
+            || x.Email.ToUpper().Contains(SearchString.ToUpper()) || (x.Address != null && x.Address.ToUpper().Contains(SearchString.ToUpper()))
+            || (x.PhoneNumber != null && x.PhoneNumber.Contains(SearchString)) || x.DoB.ToString().Contains(SearchString)
+            || x.CreatedDate.ToString().Contains(SearchString)).ToList();
+        }
+        else
+        {
+            customers = _customerSvc.GetAllCustomer();
+        }
+    }
+
+    protected void SearchCustomerStatus(ChangeEventArgs args)
+    {
+        SearchStatus = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchStatus))
+        {
+            customers = _customerSvc.GetAllCustomer().Where(x => x.Status.ToString() == SearchStatus).ToList();
+        }
+        else
+        {
+            customers = _customerSvc.GetAllCustomer();
+        }
+    }
+
+    protected void CustomerSorting(string SortColumn)
+    {
+        customers = _customerSvc.GetAllCustomer();
+        if (ids == 0)
+        {
+            ids = 1;
+
+            switch (SortColumn)
+            {
+                case "FullName":
+                    customers = customers.OrderBy(x => x.FullName).ToList();
+                    break;
+                case "CreatedDate":
+                    customers = customers.OrderBy(x => x.CreatedDate).ToList();
+                    break;
+                case "PhoneNumber":
+                    customers = customers.OrderBy(x => x.PhoneNumber).ToList();
+                    break;
+                case "Email":
+                    customers = customers.OrderBy(x => x.Email).ToList();
+                    break;
+                case "Address":
+                    customers = customers.OrderBy(x => x.Address).ToList();
+                    break;
+                case "Status":
+                    customers = customers.OrderBy(x => x.Status).ToList();
+                    break;
+            }
+        }
+        else
+        {
+            ids = 0;
+
+            switch (SortColumn)
+            {
+                case "FullName":
+                    customers = customers.OrderByDescending(x => x.FullName).ToList();
+                    break;
+                case "CreatedDate":
+                    customers = customers.OrderByDescending(x => x.CreatedDate).ToList();
+                    break;
+                case "PhoneNumber":
+                    customers = customers.OrderByDescending(x => x.PhoneNumber).ToList();
+                    break;
+                case "Email":
+                    customers = customers.OrderByDescending(x => x.Email).ToList();
+                    break;
+                case "Address":
+                    customers = customers.OrderByDescending(x => x.Address).ToList();
+                    break;
+                case "Status":
+                    customers = customers.OrderByDescending(x => x.Status).ToList();
+                    break;
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        customers = _customerSvc.GetAllCustomer();
+    }
+}

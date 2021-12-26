@@ -1,0 +1,75 @@
+﻿
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion d-flex flex-column" id="accordionSidebar">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="">
+        <div class="sidebar-brand-icon rotate-n-15">
+            <i class="fab fa-battle-net"></i>
+        </div>
+        <div class="sidebar-brand-text mx-3">SaC</div>
+    </a>
+    <hr class="sidebar-divider">
+    <li class="nav-item">
+        <a class="nav-link" href="/productlist">
+            <i class="fab fa-product-hunt"></i>
+            <span>Sản phẩm</span>
+        </a>
+    </li>
+    <hr class="sidebar-divider">
+    <li class="nav-item">
+        <a class="nav-link" href="/orderlist">
+            <i class="fas fa-fw fa-shopping-cart"></i>
+            <span>Đơn hàng</span>
+        </a>
+    </li>
+    <hr class="sidebar-divider">
+    <li class="nav-item">
+        <a class="nav-link" href="/customerlist">
+            <i class="fas fa-fw fa-user-tie"></i>
+            <span>Khách hàng</span>
+        </a>
+    </li>
+    <hr class="sidebar-divider">
+    <li class="nav-item">
+        <a class="nav-link" href="/userlist">
+            <i class="fas fa-fw fa-user-cog"></i>
+            <span>Quản lý</span>
+        </a>
+    </li>
+    <hr class="sidebar-divider">
+    <li class="nav-item">
+        <a class="nav-link" href="/voucherlist">
+            <i class="fas fa-fw fa-gifts"></i>
+            <span>Phiếu giảm giá</span>
+        </a>
+    </li>
+    <hr class="sidebar-divider">
+    <AuthorizeView>
+        <Authorized>
+            @if (context.User.IsInRole("Manager"))
+            {
+                <li class="nav-item">
+                    <a class="nav-link" href="/statistical">
+                        <i class="fas fa-fw fa-clipboard-list"></i>
+                        <span>Thống kê</span>
+                    </a>
+                </li>
+                <hr class="sidebar-divider">
+            }
+        </Authorized>
+    </AuthorizeView>
+    <li class="nav-item">
+        <a class="nav-link" href="/shipinfolist">
+            <i class="fas fa-fw fa-truck-moving"></i>
+            <span>Thông tin vận chuyển</span>
+        </a>
+    </li>
+</ul>
+
+@code {
+    private bool collapseNavMenu = true;
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

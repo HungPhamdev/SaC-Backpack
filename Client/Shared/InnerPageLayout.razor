@@ -1,0 +1,115 @@
+﻿@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime;
+@inherits LayoutComponentBase
+<style>
+    main {
+        min-height: 500px;
+    }
+</style>
+<header id="header" class="fixed-top d-flex align-items-center">
+    <div class="container d-flex align-items-center">
+
+        <div class="logo me-auto">
+            <h1><a href="/">SaC Backpack</a></h1>
+            <!-- Uncomment below if you prefer to use an image logo -->
+            <!-- <a href="index.html"><img src="assets/img/hero-img.png" alt="" class="img-fluid"></a>-->
+        </div>
+
+        <nav id="navbar" class="navbar order-last order-lg-0">
+            <ul>
+                <li><a class="nav-link scrollto" href="/">Trang chủ</a></li>
+                <li class="dropdown">
+                    <a style="cursor:pointer"><span>Tài khoản</span> <i class="bi bi-chevron-down"></i></a>
+                    <ul>
+                        <li><a class="nav-link scrollto" href="/login">Đăng nhập</a></li>
+                        <li><a class="nav-link scrollto" href="/register">Đăng ký</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav><!-- .navbar -->
+    </div>
+</header><!-- End Header -->
+
+<main id="main">
+    @Body
+</main>
+<BlazoredToasts Position="Blazored.Toast.Configuration.ToastPosition.TopRight" Timeout="2" />
+<!-- ======= Footer ======= -->
+<footer id="footer">
+    <div class="footer-top">
+        <div class="container">
+            <div class="row">
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="footer-info">
+                        <h3>SaC Backpack</h3>
+                        <p>
+                            CVPM Quang Trung <br>
+                            Quận 12, TP. HCM<br><br>
+
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 footer-links">
+                    <h4>LỐI TẮT</h4>
+                    <ul>
+                        <li><i class="bx bx-chevron-right"></i> <a href="/">Trang chủ</a></li>
+                        <li><i class="bx bx-chevron-right"></i> <a href="/login">Đăng nhập</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6 footer-links">
+                    <h4>DỊCH VỤ CỦA CHÚNG TÔI</h4>
+                    <ul>
+                        <li><i class="bx bx-chevron-right"></i> <a href="/products">Sản phẩm</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6 footer-newsletter">
+                    <h4>LIÊN HỆ</h4>
+                    <strong>SĐT:</strong> 033 278 0105<br>
+                    <strong>Email:</strong> web.sacbackpack@gmail.com<br />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="credits">
+
+            Designed by <b>4Dev</b>
+        </div>
+    </div>
+</footer><!-- End Footer -->
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("mainJS");
+    }
+
+    //string email;
+    //int customerid;
+    //protected override async Task OnInitializedAsync()
+    //{
+    //    email = sessionStorage.GetItem<string>("Email");
+
+    //    customerid = sessionStorage.GetItem<int>("customerId");
+    //}
+    //protected void o()
+    //{
+    //    email = sessionStorage.GetItem<string>("Email");
+    //}
+    //protected void Logout()
+    //{
+    //    sessionStorage.RemoveItem("AccessToken");
+    //    sessionStorage.RemoveItem("Email");
+    //    NavigationManager.NavigateTo("/");
+    //}
+    //protected void Logout()
+    //{
+    //    sessionStorage.RemoveItem("AccessToken");
+    //    sessionStorage.RemoveItem("Email");
+    //    navigationManager.NavigateTo("/", true);
+    //}
+}

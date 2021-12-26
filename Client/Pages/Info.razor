@@ -1,0 +1,364 @@
+﻿@page "/info/{id}"
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+@using Blazored.Toast
+@using Blazored.Toast.Services
+@using System.Net;
+@using Newtonsoft.Json;
+@using Share.Models;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using Syncfusion.Blazor.Popups
+@layout WebLayout
+@inject IJSRuntime JSRuntime
+@inject IToastService toastService
+@inject NavigationManager NavigationManager
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject Microsoft.Extensions.Configuration.IConfiguration config
+<style>
+    :root {
+        --input-padding-x: 1.5rem;
+        --input-padding-y: .75rem;
+    }
+
+    .card-signin {
+        border: 0;
+        border-radius: 1rem;
+        box-shadow: 0 0.5rem 1rem 0 rgba(0, 0, 0, 0.1);
+    }
+
+        .card-signin .card-title {
+            margin-bottom: 2rem;
+            font-weight: 300;
+            font-size: 1.5rem;
+        }
+
+        .card-signin .card-body {
+            padding: 2rem;
+        }
+
+    .form-signin {
+        width: 100%;
+    }
+
+        .form-signin .btn {
+            font-size: 80%;
+            border-radius: 5rem;
+            letter-spacing: .1rem;
+            font-weight: bold;
+            padding: 1rem;
+            transition: all 0.2s;
+        }
+
+    .form-label-group {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+
+        .form-label-group input {
+            height: auto;
+            border-radius: 2rem;
+        }
+
+        .form-label-group > input,
+        .form-label-group > label {
+            padding: var(--input-padding-y) var(--input-padding-x);
+        }
+
+        .form-label-group > label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: block;
+            width: 100%;
+            margin-bottom: 0;
+            line-height: 1.5;
+            color: #495057;
+            border: 1px solid transparent;
+            border-radius: .25rem;
+            transition: all .1s ease-in-out;
+        }
+
+        .form-label-group input::-webkit-input-placeholder {
+            color: transparent;
+        }
+
+        .form-label-group input:-ms-input-placeholder {
+            color: transparent;
+        }
+
+        .form-label-group input::-ms-input-placeholder {
+            color: transparent;
+        }
+
+        .form-label-group input::-moz-placeholder {
+            color: transparent;
+        }
+
+        .form-label-group input::placeholder {
+            color: transparent;
+        }
+
+        .form-label-group input:not(:placeholder-shown) {
+            padding-top: calc(var(--input-padding-y) + var(--input-padding-y) * (2 / 3));
+            padding-bottom: calc(var(--input-padding-y) / 3);
+        }
+
+            .form-label-group input:not(:placeholder-shown) ~ label {
+                padding-top: calc(var(--input-padding-y) / 3);
+                padding-bottom: calc(var(--input-padding-y) / 3);
+                font-size: 12px;
+                color: #777;
+            }
+
+    .ds {
+        text-align: center;
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+    /*.e-dlg-content {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-around !important;
+    }
+
+    .e-dialog {
+        border-radius: 30px;
+    }
+
+    .e-footer-content,
+    .e-dlg-header-content {
+        background: transparent;
+    }*/
+    /* Fallback for Edge
+        -------------------------------------------------- */
+
+</style>
+<br />
+<br />
+<Animate Animation="Animations.FadeUp" Duration="TimeSpan.FromSeconds(1)">
+    <div class="mt-2">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+                    <div class="card card-signin my-5">
+                        <div class="card-body">
+                            <h5 class="card-title text-center fw-bold">Thông tin cá nhân</h5>
+                            <EditForm Model="@cus" OnValidSubmit="@SubmitForm" class="form-signin">
+                                <DataAnnotationsValidator />
+                                <input type="hidden" @bind="cus.CustomerId" />
+                                <div class="form-label-group">
+                                    <input type="text" id="inputEmail" @bind="cus.Email" class="form-control" readonly>
+                                    <label class="control-label">Địa chỉ Email</label>
+                                    <ValidationMessage For="@(() => cus.Email)" />
+                                </div>
+
+                                <AuthorizeView>
+                                    <Authorized Context="Authorized">
+                                        <div class="form-label-group">
+                                            <input type="text" id="inputFullname" @bind="cus.FullName" class="form-control" readonly>
+                                            <label class="control-label">Họ tên</label>
+                                            <ValidationMessage For="@(() => cus.FullName)" />
+                                        </div>
+                                    </Authorized>
+                                    <NotAuthorized Context="NotAuthorized">
+                                        <div class="form-label-group">
+                                            <input type="text" id="inputFullname" @bind="cus.FullName" class="form-control">
+                                            <label class="control-label">Họ tên</label>
+                                            <ValidationMessage For="@(() => cus.FullName)" />
+                                        </div>
+                                    </NotAuthorized>
+                                </AuthorizeView>
+
+                                <div class="form-label-group">
+                                    <input type="date" id="inputEmail" @bind="cus.DoB" class="form-control">
+                                    <label class="control-label">Ngày sinh</label>
+                                    <ValidationMessage For="@(() => cus.DoB)" />
+                                </div>
+
+                                <div class="form-label-group">
+                                    <input type="text" id="inputEmail" @bind="cus.Address" class="form-control">
+                                    <label class="control-label">Địa chỉ</label>
+                                    <ValidationMessage For="@(() => cus.Address)" />
+                                </div>
+
+                                <div class="form-label-group">
+                                    <input type="text" id="inputEmail" @bind="cus.PhoneNumber" class="form-control">
+                                    <label class="control-label">Số điện thoại</label>
+                                    <ValidationMessage For="@(() => cus.PhoneNumber)" />
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-lg btn-google btn-block text-uppercase" value="Lưu" type="submit">Lưu</button>
+                                    <button class="btn btn-lg btn-facebook btn-block text-uppercase" @onclick="@Cancel" value="Thoát">Thoát</button>
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</Animate>
+
+@*<SfDialog Width="500px" Height="250px" IsModal="true" @bind-Visible="IsVisible">
+        <DialogTemplates>
+            <Header><i class="fa fa-envelope-open" aria-hidden="true"></i> Thông báo !</Header>
+            <Content><div class="ds"> Lưu thông tin thành công</div> </Content>
+        </DialogTemplates>
+        <DialogAnimationSettings Effect="DialogEffect.FlipXDown" Duration=600 />
+        <DialogButtons>
+            <DialogButton Content="OK" IsPrimary="true" OnClick="@CloseDialog" />
+        </DialogButtons>
+    </SfDialog>*@
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    private bool isPhoneNumberExisted = false;
+    public Customer cus;
+    private ToastParameters _toastParameters;
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(id) || id == "0" || id == "0")
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            var apiUrl = config.GetSection("API")["APIUrl"].ToString();
+            var accessToken = sessionStorage.GetItem<string>("AccessToken");
+            var accessTokenGoogle = AuthStat.Result.User.Claims.Where(_ => _.Type == "APIjwt").Select(_ => _.Value).FirstOrDefault();
+            cus = new Customer();
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+                client.DefaultRequestHeaders.Add("Access-Control-Allow-Origin", "*");
+                client.BaseAddress = new Uri(apiUrl);
+                if (accessTokenGoogle != null && accessTokenGoogle != "")
+                {
+                    using (var response = await client.GetAsync("Customer/GetCustomerbyMail/?email=" + id))
+                    {
+                        string apiResponse = await response.Content.ReadAsStringAsync();
+                        cus = JsonConvert.DeserializeObject<Customer>(apiResponse);
+                    }
+                }
+                else
+                {
+                    using (var response = await client.GetAsync("Customer/?id=" + id))
+                    {
+                        string apiResponse = await response.Content.ReadAsStringAsync();
+                        cus = JsonConvert.DeserializeObject<Customer>(apiResponse);
+                    }
+                }
+            }
+        }
+    }
+
+    private async void SubmitForm()
+    {
+        _toastParameters = new ToastParameters();
+        var apiUrl = config.GetSection("API")["APIUrl"].ToString();
+        var accessTokenGoogle = AuthStat.Result.User.Claims.Where(_ => _.Type == "APIjwt").Select(_ => _.Value).FirstOrDefault();
+        var accessToken = sessionStorage.GetItem<string>("AccessToken");
+        var customerId = sessionStorage.GetItem<int>("customerId");
+        using (var client = new HttpClient())
+        {
+            if (accessToken != null && accessToken != "")
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+            }
+            if (accessTokenGoogle != null && accessTokenGoogle != "")
+            {
+                customerId = cus.CustomerId;
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessTokenGoogle);
+            }
+            client.DefaultRequestHeaders.Add("Access-Control-Allow-Origin", "*");
+            client.BaseAddress = new Uri(apiUrl);
+            using (var resPhoneNumber = await client.GetAsync("Customer/CheckPhoneNumber/?phoneNumber=" + cus.PhoneNumber))
+            {
+                var phoneNumber = await resPhoneNumber.Content.ReadAsStringAsync();
+                isPhoneNumberExisted = bool.Parse(phoneNumber);
+            }
+            if (!string.IsNullOrEmpty(cus.Address) && !string.IsNullOrEmpty(cus.PhoneNumber))
+            {
+                if (isPhoneNumberExisted)
+                {
+                    _toastParameters.Add(nameof(Notification.Title), "Số điện thoại đã tồn tại!");
+                    _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                    toastService.ShowToast<Notification>(_toastParameters);
+                }
+                else
+                {
+                    StringContent content = new StringContent(JsonConvert.SerializeObject(cus), System.Text.Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = await client.PutAsync("customer/?id=" + customerId, content);
+                    if (response.StatusCode != HttpStatusCode.OK)
+                    {
+
+                    }
+                    else
+                    {
+                        string apiResponse = await response.Content.ReadAsStringAsync();
+                        if (apiResponse == "-1")
+                        {
+                            _toastParameters.Add(nameof(Notification.Title), "Chỉnh sửa thất bại!");
+                            _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                            toastService.ShowToast<Notification>(_toastParameters);
+                        }
+                        else
+                        {
+                            _toastParameters.Add(nameof(Notification.Title), "Chỉnh sửa thành công!");
+                            _toastParameters.Add(nameof(Notification.IsSuccess), true);
+                            toastService.ShowToast<Notification>(_toastParameters);
+                            await JSRuntime.InvokeVoidAsync("RefreshCustomer.refreshData");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(cus.Address) && string.IsNullOrEmpty(cus.PhoneNumber))
+                {
+                    _toastParameters.Add(nameof(Notification.Title), "Vui lòng nhập địa chỉ và số điện thoại!");
+                    _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                    toastService.ShowToast<Notification>(_toastParameters);
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(cus.Address))
+                    {
+                        _toastParameters.Add(nameof(Notification.Title), "Vui lòng nhập địa chỉ!");
+                        _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                        toastService.ShowToast<Notification>(_toastParameters);
+                    }
+                    if (string.IsNullOrEmpty(cus.PhoneNumber))
+                    {
+                        _toastParameters.Add(nameof(Notification.Title), "Vui lòng nhập số điện thoại!");
+                        _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                        toastService.ShowToast<Notification>(_toastParameters);
+                    }
+                }
+            }
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/", true);
+    }
+
+    //private bool IsVisible { get; set; }
+
+    //private void OpenDialog()
+    //{
+    //    IsVisible = true;
+    //}
+
+    //private void CloseDialog()
+    //{
+    //    IsVisible = false;
+    //    NavigationManager.NavigateTo("/", true);
+    //}
+}

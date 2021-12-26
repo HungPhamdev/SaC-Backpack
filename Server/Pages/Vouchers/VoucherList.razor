@@ -1,0 +1,205 @@
+﻿@page "/voucherlist"
+@using Share.Models
+@using Share.Helpers
+@layout MainLayout
+@inject Share.Interfaces.IVoucherSvc _voucherSvc
+<h1 class="font-weight-bold text-center">Danh sách giảm giá</h1>
+@if (vouchers == null)
+{
+    <p><em>Loading ...</em></p>
+}
+else
+{
+<div class="text-right">
+    <a style="text-decoration:none;" href="/voucherdialog/0">
+        <button type="button" class="btn btn-success btn-circle btn-md"><i class="fa fa-plus" style="color:white;font-size:20px;"></i></button>
+    </a>
+    <br />
+    <br />
+    <div class="d-flex justify-content-end">
+        <select name="cars" class="custom-select col-2 mr-2" value="@SearchCategory" @onchange="SearchVoucherCategory">
+            <option value="">Chọn thể loại</option>
+            <option value="@CategoryDiscount.Percent">Phần trăm</option>
+            <option value="@CategoryDiscount.Cash">Tiền mặt</option>
+        </select>
+        <select name="cars" class="custom-selec col-2 mr-2" value="@SearchStatus" @onchange="SearchVoucherStatus">
+            <option value="">Chọn trạng thái</option>
+            <option value="True">Còn hiệu lực</option>
+            <option value="False">Hết hiệu lực</option>
+        </select>
+        <input type="text" class="form-control col-2 mr-2" @bind-value=@SearchString @oninput="SearchInfo" placeholder="Nhập thông tin tìm kiếm..." />
+    <button class="btn btn-outline-primary form-control col-1" @onclick="OnInitialized">Tìm kiếm</button>
+    </div>
+    <br />
+    <br />
+</div>
+
+    <table class="table table-hover text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th style="cursor: pointer" @onclick="@(()=>VoucherSorting("VoucherCode"))">Mã voucher</th>
+                <th style="cursor: pointer" @onclick="@(()=>VoucherSorting("StartDate"))">Ngày hiệu lực</th>
+                <th style="cursor: pointer" @onclick="@(()=>VoucherSorting("EndDate"))">Ngày kết thúc</th>
+                <th style="cursor: pointer" @onclick="@(()=>VoucherSorting("Status"))">Trạng thái</th>
+                <th style="cursor: pointer" @onclick="@(()=>VoucherSorting("VoucherQuantity"))">Số lượng</th>
+                <th style="cursor: pointer" @onclick="@(()=>VoucherSorting("CategoryDiscount"))">Loại giảm giá</th>
+                <th style="cursor: pointer" @onclick="@(()=>VoucherSorting("Value"))">Giá trị</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in vouchers)
+            {
+                <tr>
+                    <td>@item.VoucherCode</td>
+                    <td>@item.StartDate.Date.ToString("dd/MM/yyyy") </td>
+                    <td>@item.EndDate.Date.ToString("dd/MM/yyyy") </td>
+                    <td>
+                        @if (item.Status)
+                        {
+                            <span>Còn hiệu lực</span>
+                        }
+                        else
+                        {
+                            <span>Hết hiệu lực</span>
+                        }
+                    </td>
+                    <td>@item.VoucherQuantity</td>
+                    <td>@item.CategoryDiscount.DisplayName()</td>
+                    <td>@item.Value</td>
+                    <td>
+                        <a class="btn btn-info" href="/voucherdialog/@item.VoucherId">Sửa</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    //[Parameter]
+    public string SearchString { get; set; }
+    public string SearchCategory { get; set; }
+    public string SearchStatus { get; set; }
+    int ids = 0;
+    public List<Voucher> vouchers;
+
+    protected void SearchInfo(ChangeEventArgs args)
+    {
+        SearchString = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchString))
+        {
+            vouchers = _voucherSvc.GetAllVoucher().Where(x => x.VoucherCode.ToUpper().Contains(SearchString.ToUpper())
+            || x.StartDate.ToString().Contains(SearchString) || x.EndDate.ToString().Contains(SearchString)
+            || x.VoucherQuantity.ToString().Contains(SearchString) || x.Value.ToString().Contains(SearchString)).ToList();
+        }
+        else
+        {
+            vouchers = _voucherSvc.GetAllVoucher();
+        }
+    }
+
+    protected void SearchVoucherCategory(ChangeEventArgs args)
+    {
+        SearchCategory = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchCategory))
+        {
+            vouchers = _voucherSvc.GetAllVoucher().Where(x => x.CategoryDiscount.ToString() == SearchCategory).ToList();
+        }
+        else
+        {
+            vouchers = _voucherSvc.GetAllVoucher();
+        }
+    }
+
+    protected void SearchVoucherStatus(ChangeEventArgs args)
+    {
+        SearchStatus = args.Value.ToString();
+        if (!string.IsNullOrEmpty(SearchStatus))
+        {
+            vouchers = _voucherSvc.GetAllVoucher().Where(x => x.Status.ToString() == SearchStatus).ToList();
+        }
+        else
+        {
+            vouchers = _voucherSvc.GetAllVoucher();
+        }
+    }
+
+    protected void VoucherSorting(string SortColumn)
+    {
+        vouchers = _voucherSvc.GetAllVoucher();
+        if (ids == 0)
+        {
+            ids = 1;
+            switch (SortColumn)
+            {
+                case "VoucherCode":
+                    vouchers = vouchers.OrderBy(x => x.VoucherCode).ToList();
+                    break;
+                case "StartDate":
+                    vouchers = vouchers.OrderBy(x => x.StartDate).ToList();
+                    break;
+                case "EndDate":
+                    vouchers = vouchers.OrderBy(x => x.EndDate).ToList();
+                    break;
+                case "Status":
+                    vouchers = vouchers.OrderBy(x => x.Status).ToList();
+                    break;
+                case "VoucherQuantity":
+                    vouchers = vouchers.OrderBy(x => x.VoucherQuantity).ToList();
+                    break;
+                case "CategoryDiscount":
+                    vouchers = vouchers.OrderBy(x => x.CategoryDiscount).ToList();
+                    break;
+                case "Value":
+                    vouchers = vouchers.OrderBy(x => x.Value).ToList();
+                    break;
+            }
+        }
+        else
+        {
+            ids = 0;
+
+            switch (SortColumn)
+            {
+                case "VoucherCode":
+                    vouchers = vouchers.OrderByDescending(x => x.VoucherCode).ToList();
+                    break;
+                case "StartDate":
+                    vouchers = vouchers.OrderByDescending(x => x.StartDate).ToList();
+                    break;
+                case "EndDate":
+                    vouchers = vouchers.OrderByDescending(x => x.EndDate).ToList();
+                    break;
+                case "Status":
+                    vouchers = vouchers.OrderByDescending(x => x.Status).ToList();
+                    break;
+                case "VoucherQuantity":
+                    vouchers = vouchers.OrderByDescending(x => x.VoucherQuantity).ToList();
+                    break;
+                case "CategoryDiscount":
+                    vouchers = vouchers.OrderByDescending(x => x.CategoryDiscount).ToList();
+                    break;
+                case "Value":
+                    vouchers = vouchers.OrderByDescending(x => x.Value).ToList();
+                    break;
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        vouchers = _voucherSvc.GetAllVoucher();
+    }
+    //protected override void OnParametersSet()
+    //{
+    //    if (!string.IsNullOrEmpty(SearchString))
+    //    {
+    //        vouchers = _voucherSvc.GetAllVoucher().Where(x => x.VoucherCode.ToUpper().Contains(SearchString.ToUpper())).ToList();
+    //    }
+    //    else
+    //    {
+    //        vouchers = _voucherSvc.GetAllVoucher();
+    //    }
+    //}
+
+}

@@ -1,0 +1,155 @@
+﻿@page "/voucherdialog/{id}"
+@using Share.Models
+@using Blazored.Toast
+@using Blazored.Toast.Services
+@inject Share.Interfaces.IVoucherSvc _voucherService
+@inject NavigationManager navigation
+@inject IToastService toastService
+
+<div class="container">
+    <div class="row">
+        <div class="col-xl-6 mx-auto">
+            <div class="card card-signin flex-row shadow-lg card-signup">
+                <div class="card-body">
+                    <h2 class="card-title text-center font-weight-bold text-uppercase">@Tilte</h2>
+                    <div class="col-md-12">
+                        <form asp-action="Create" class="form-signin">
+                            <EditForm Model="@voucher" OnValidSubmit="@SubmitForm">
+                                <DataAnnotationsValidator />
+                                <input type="hidden" @bind="voucher.VoucherId" />
+                                <div class="form-label-group">
+                                    <label class="control-label">Mã giảm</label>
+                                    <input @bind="voucher.VoucherCode" class="form-control" />
+                                    <ValidationMessage For="@(() => voucher.VoucherCode)" />
+                                </div>
+
+                                <div class="form-label-group mt-3">
+                                    <label class="control-label">Ngày hiệu lực</label>
+                                    <input type="date" @bind="voucher.StartDate" class="form-control" />
+                                    <ValidationMessage For="@(() => voucher.StartDate)" />
+                                </div>
+                                <div class="form-label-group mt-3">
+                                    <label class="control-label">Ngày kết thúc</label>
+                                    <input type="date" @bind="voucher.EndDate" class="form-control" />
+                                    <ValidationMessage For="@(() => voucher.EndDate)" />
+                                </div>
+
+                                @if (id != "0")
+                                {
+                                    <div class="form-label-group mt-3 form-check">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" class="form-check-input" @bind="voucher.Status" /> Còn hiệu lực
+                                        </label>
+                                    </div>
+                                }
+
+
+                                <div class="form-label-group mt-3">
+                                    <label class="control-label">Loại giảm giá</label>
+                                    <InputSelect @bind-Value="@voucher.CategoryDiscount" class="form-control">
+                                        <option value="@CategoryDiscount.Cash">Tiền mặt</option>
+                                        <option value="@CategoryDiscount.Percent">Phần trăm</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => voucher.CategoryDiscount)" />
+                                </div>
+
+                                @if (voucher.CategoryDiscount == CategoryDiscount.Percent)
+                                {
+                                    <div class="form-label-group mt-3">
+                                        <label class="control-label">Giá trị</label>
+                                        <input type="number" min="0" max="100" @bind="voucher.Value" class="form-control" />
+                                        <ValidationMessage For="@(() => voucher.Value)" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="form-label-group mt-3">
+                                        <label class="control-label">Giá trị</label>
+                                        <input type="number" min="1000" @bind="voucher.Value" class="form-control" />
+                                        <ValidationMessage For="@(() => voucher.Value)" />
+                                    </div>
+                                }
+
+                                <div class="form-label-group mt-3">
+                                    <label class="control-label">Số lượng mã</label>
+                                    <input type="number" min="0" max="10000" @bind="voucher.VoucherQuantity" class="form-control" />
+                                    <ValidationMessage For="@(() => voucher.VoucherQuantity)" />
+                                </div>
+                                <div class="form-label-group mt-3">
+                                    <button type="submit" class="btn btn-info">Lưu</button>
+                                    <input type="button" class="btn btn-primary" @onclick="@Cancel" value="Thoát" />
+                                </div>
+                            </EditForm>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    private Share.Models.Voucher voucher { get; set; }
+    private ToastParameters _toastParameters;
+    private string Tilte = "";
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrWhiteSpace(id) || id == "0")
+        {
+            Tilte = "Thêm mã giảm giá";
+            voucher = new Share.Models.Voucher();
+            voucher.StartDate = DateTime.Today;
+            voucher.EndDate = DateTime.Today.AddDays(1);
+        }
+        else
+        {
+            Tilte = "Sửa mã giảm giá";
+            voucher = _voucherService.GetVoucher(int.Parse(id));
+        }
+    }
+    private void SubmitForm()
+    {
+        _toastParameters = new ToastParameters();
+        if (voucher.VoucherId == 0)
+        {
+            int ret = _voucherService.AddVoucher(voucher);
+            if (ret != 0)
+            {
+                _toastParameters.Add(nameof(Notification.Title), "Thêm mã giảm giá thành công!");
+                _toastParameters.Add(nameof(Notification.IsSuccess), true);
+                toastService.ShowToast<Notification>(_toastParameters);
+            }
+            else
+            {
+                _toastParameters.Add(nameof(Notification.Title), "Thêm mã giảm giá thất bại!");
+                _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                toastService.ShowToast<Notification>(_toastParameters);
+            }
+        }
+        else
+        {
+            int ret = _voucherService.EditVoucher(voucher.VoucherId, voucher);
+            if (ret == voucher.VoucherId)
+            {
+                _toastParameters.Add(nameof(Notification.Title), "Chỉnh sửa mã giảm giá thành công!");
+                _toastParameters.Add(nameof(Notification.IsSuccess), true);
+                toastService.ShowToast<Notification>(_toastParameters);
+            }
+            else
+            {
+                _toastParameters.Add(nameof(Notification.Title), "Chỉnh sửa mã giảm giá thất bại!");
+                _toastParameters.Add(nameof(Notification.IsSuccess), false);
+                toastService.ShowToast<Notification>(_toastParameters);
+            }
+        }
+        navigation.NavigateTo("VoucherList");
+    }
+    private void Cancel()
+    {
+        navigation.NavigateTo("VoucherList", true);
+
+    }
+
+}
